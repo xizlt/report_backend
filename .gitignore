@@ -1,0 +1,11 @@
+__pycache__/
+evenv/
+%SystemDrive%/
+*.py[cod]
+*$py.class
+*.old
+*.sublime-*
+.idea
+local_settings.py
+db.sqlite3
+.env
