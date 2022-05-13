@@ -189,8 +189,8 @@ class TaskManager:
         FROM shipments_nomenclature
         WHERE konk = true;"""
 
-    @staticmethod
-    def _prepare_sql_gifts(begin_date, end_date):
+    @classmethod
+    def _prepare_sql_gifts(cls, begin_date, end_date):
         if not begin_date or not end_date:
             exit(0)
         return f"""
@@ -209,28 +209,11 @@ class TaskManager:
         WHERE cg.customer_id IS NOT NULL AND cg.status='0' AND DATE(created_at) BETWEEN '{begin_date}' AND '{end_date}'
         GROUP BY cc3.phone_number, gift_id, DATE(created_at), cg.nominal, cc3.customer_id
 
-        UNION ALL
-
-        SELECT cc.phone_number,co.nominal, 'OZON' AS gift_id, count(date_order_create), DATE(date_order_create) AS created_at, 'k', cc.customer_id
-        FROM customer_ozon AS co
-        LEFT JOIN customer_customer cc ON cc.customer_id = co.customer_id
-        WHERE co.customer_id IS NOT NULL AND co.status_order='3' AND DATE(date_order_create) BETWEEN '{begin_date}' AND '{end_date}'
-        GROUP BY cc.phone_number, gift_id, DATE(date_order_create),co.nominal, cc.customer_id
-
-        UNION ALL
-
-        SELECT cc4.phone_number,co.nominal, 'OZON' AS gift_id, count(date_order_create), DATE(date_order_create) AS created_at, 'c', cc4.customer_id
-        FROM cashback_ozong AS co
-        LEFT JOIN cashback_c cc2 ON cc2.profile_id = co.customer_id
-        JOIN customer_customer cc4 ON cc4.customer_id = cc2.customer_id
-        WHERE co.customer_id IS NOT NULL AND co.status_order='3' AND  DATE(date_order_create) BETWEEN '{begin_date}' AND '{end_date}'
-        GROUP BY cc4.phone_number, gift_id, DATE(date_order_create), co.nominal, cc4.customer_id
-
         ORDER BY count DESC;
         """
 
-    @staticmethod
-    def _prepare_data_transaction(begin_date, end_date):
+    @classmethod
+    def _prepare_data_transaction(cls, begin_date, end_date):
         if not begin_date or not end_date:
             exit(0)
         return [
@@ -242,20 +225,16 @@ class TaskManager:
                 '$group': {
                     '_id':              {
                         'date':           '$date',
-                        'phone':          '$phone_number',
                         'code':           '$code_1c',
-                        'operation_type': '$operation_type',
                         'event_type':     '$event_type',
                         'region':         '$region',
                     },
-                    'bonuses':          {'$sum': '$bonuses'},
                     'num_transactions': {'$sum': 1},
                     'currency':         {'$first': '$currency'},
                 }
             },
         ]
 
-    @staticmethod
     def __mongo_connect():
         return MongoClient(settings.MONGO_URL, tz_aware=True)
 
@@ -275,7 +254,6 @@ class TaskManager:
         result = cls.__mongo_connect().gifts.products_list.find()
         return result
 
-    @staticmethod
     def _fetch_data(query):
         conn = connections['data']
         conn.ensure_connection()
